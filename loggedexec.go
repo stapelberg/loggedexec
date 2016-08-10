@@ -107,7 +107,8 @@ func (l *LoggedCmd) Run() error {
 	cmdCountMu.Lock()
 	// To prevent leaking private data, only l.Args[0] goes into the
 	// file name, which is readable by other users on the same system.
-	logPrefix := filepath.Join(l.LogDir, fmt.Sprintf(l.LogFmt, cmdCount)+l.Args[0])
+	nameSafeCmd := strings.Replace(strings.TrimPrefix(l.Args[0], "/"), "/", "_", -1)
+	logPrefix := filepath.Join(l.LogDir, fmt.Sprintf(l.LogFmt, cmdCount)+nameSafeCmd)
 	cmdCount++
 	cmdCountMu.Unlock()
 	invocationLogPath := logPrefix + ".invocation.log"
