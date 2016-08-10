@@ -6,6 +6,7 @@ package loggedexec
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -24,7 +25,7 @@ var (
 	cmdCountMu sync.Mutex
 )
 
-// LoggedCmd is like (os/exec).Cmd, but its Run() method additionally:
+// LoggedCmd wraps (os/exec).Cmd, but its Run() method additionally:
 //
 //   * Logs each invocation’s command for human consumption.
 //   * Logs each invocation’s working directory, Args, Env and timing
@@ -51,6 +52,17 @@ type LoggedCmd struct {
 	// LogDir. Defaults to "%03d-" and must contain precisely one "%d"
 	// which will be replaced with the invocation count.
 	LogFmt string
+}
+
+// ExitError wraps (os/exec).ExitError with a more verbose error message.
+type ExitError struct {
+	*exec.ExitError
+
+	message string
+}
+
+func (e *ExitError) Error() string {
+	return e.message
 }
 
 // Command is like (os/exec).Command, but returns a LoggedCmd.
@@ -177,7 +189,7 @@ func (l *LoggedCmd) Run() error {
 		return nil
 	}
 	firstLogLine := cw.FirstLine()
-	return fmt.Errorf("Running %q: %v\n"+
+	message := fmt.Sprintf("Running %q: %v\n"+
 		"See %q for invocation details.\n"+
 		"See %q for full stdout/stderr.\n"+
 		"First stdout/stderr line: %q\n",
@@ -186,4 +198,12 @@ func (l *LoggedCmd) Run() error {
 		invocationLogPath,
 		logPath,
 		firstLogLine)
+	if eerr, ok := runErr.(*exec.ExitError); ok {
+		return &ExitError{
+			ExitError: eerr,
+			message:   message,
+		}
+	} else {
+		return errors.New(message)
+	}
 }

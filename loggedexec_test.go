@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"regexp"
+	"syscall"
 	"testing"
 )
 
@@ -118,6 +119,25 @@ func TestTee(t *testing.T) {
 	if got, want := stdouterr.String(), "ls: cannot access /tmp/nope: No such file or directory\n"; got != want {
 		t.Fatalf("Unexpected stdout/stderr buffer contents: got %q, want %q", got, want)
 	}
+}
+
+func TestExitError(t *testing.T) {
+	err := Command("/bin/false").Run()
+	if err == nil {
+		t.Fatalf("Running /bin/false unexpectedly did not result in an error")
+	}
+	eerr, ok := err.(*ExitError)
+	if !ok {
+		t.Fatalf("type assertion (*exec.ExitError) failed on err=%v", err)
+	}
+	stat, ok := eerr.ProcessState.Sys().(syscall.WaitStatus)
+	if !ok {
+		t.Fatalf("type assertion (syscall.WaitStatus) failed on eerr")
+	}
+	if stat.ExitStatus() == 0 {
+		t.Fatalf("ExitStatus() == 0, but err != nil")
+	}
+	t.Logf("exit code %d", stat.ExitStatus())
 }
 
 func TestResetCounter(t *testing.T) {
