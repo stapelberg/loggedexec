@@ -3,7 +3,7 @@ package loggedexec_test
 import (
 	"fmt"
 
-	"github.com/Debian/mergebot/loggedexec"
+	"github.com/stapelberg/loggedexec"
 )
 
 func ExampleCommand() {
