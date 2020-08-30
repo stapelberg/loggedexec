@@ -66,6 +66,10 @@ func (e *ExitError) Error() string {
 	return e.message
 }
 
+func (e *ExitError) Unwrap() error {
+	return e.ExitError
+}
+
 // Command is like (os/exec).Command, but returns a LoggedCmd.
 func Command(name string, arg ...string) *LoggedCmd {
 	return &LoggedCmd{
