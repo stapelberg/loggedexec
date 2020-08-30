@@ -94,8 +94,12 @@ func testLogFile(t *testing.T, cmd *LoggedCmd) {
 	if err != nil {
 		t.Fatalf("Could not read stdout/stderr log: %v", err)
 	}
-	if got, want := string(contents), "ls: cannot access /tmp/nope: No such file or directory\n"; got != want {
-		t.Fatalf("Unexpected stdout/stderr log contents: got %q, want %q", got, want)
+	want := map[string]bool{
+		"ls: cannot access /tmp/nope: No such file or directory\n": true,
+		"ls: /tmp/nope: No such file or directory\n":               true,
+	}
+	if got := string(contents); !want[got] {
+		t.Fatalf("Unexpected stdout/stderr log contents: got %q, want one of %v", got, want)
 	}
 }
 
@@ -116,8 +120,12 @@ func TestTee(t *testing.T) {
 	cmd.Stdout = &stdouterr
 	cmd.Stderr = &stdouterr
 	testLogFile(t, cmd)
-	if got, want := stdouterr.String(), "ls: cannot access /tmp/nope: No such file or directory\n"; got != want {
-		t.Fatalf("Unexpected stdout/stderr buffer contents: got %q, want %q", got, want)
+	want := map[string]bool{
+		"ls: cannot access /tmp/nope: No such file or directory\n": true,
+		"ls: /tmp/nope: No such file or directory\n":               true,
+	}
+	if got := stdouterr.String(); !want[got] {
+		t.Fatalf("Unexpected stdout/stderr buffer contents: got %q, want one of %v", got, want)
 	}
 }
 
