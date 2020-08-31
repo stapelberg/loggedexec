@@ -6,6 +6,7 @@ package loggedexec
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -65,10 +66,23 @@ func (e *ExitError) Error() string {
 	return e.message
 }
 
+func (e *ExitError) Unwrap() error {
+	return e.ExitError
+}
+
 // Command is like (os/exec).Command, but returns a LoggedCmd.
 func Command(name string, arg ...string) *LoggedCmd {
 	return &LoggedCmd{
 		Cmd:    exec.Command(name, arg...),
+		Logger: log.New(os.Stderr, "", log.Lshortfile),
+		LogFmt: "%03d-",
+	}
+}
+
+// CommandContext is like (os/exec).CommandContext, but returns a LoggedCmd.
+func CommandContext(ctx context.Context, name string, arg ...string) *LoggedCmd {
+	return &LoggedCmd{
+		Cmd:    exec.CommandContext(ctx, name, arg...),
 		Logger: log.New(os.Stderr, "", log.Lshortfile),
 		LogFmt: "%03d-",
 	}
